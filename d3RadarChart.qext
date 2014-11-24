@@ -1,0 +1,9 @@
+{
+    "name": "d3 Radar Chart",
+    "description": "d3 Radar Chart",
+    "icon": "extension",
+    "type": "visualization",
+    "version": "0.1",
+	"preview": "preview.png",
+    "author": "brz"
+}
