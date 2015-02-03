@@ -1,4 +1,5 @@
-define(["jquery","./d3.min"], function($, d3, width, height)
+define(["jquery", "./d3.min"], function($,  d3, width, height) //cssContent,
+//, "css!./radar-chart.css"
 {
 	var RadarChart = {
 	  defaultConfig: {
@@ -7,6 +8,7 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 		h: 600,
 		factor: 0.95,
 		factorLegend: 1,
+		ToRight: 5,
 		levels: 3,
 		levelTick: false,
 		TickLength: 10,
@@ -16,6 +18,7 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 		axisLine: true,
 		axisText: true,
 		circles: true,
+		numbersOnAxis: true,
 		radius: 5,
 		axisJoin: function(d, i) {
 		  return d.className || i;
@@ -25,7 +28,9 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 	  chart: function() {
 		// default config
 		var cfg = Object.create(RadarChart.defaultConfig);
-
+		var Format = d3.format('g');
+		
+		
 		function radar(selection) {
 		  selection.each(function(data) {
 			var container = d3.select(this);
@@ -76,7 +81,25 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 			var levelLine = levelGroups.selectAll('.level').data(function(levelFactor) {
 			  return d3.range(0, total).map(function() { return levelFactor; });
 			});
-
+			
+			if (cfg.numbersOnAxis){
+			for(var j=0; j<cfg.levels; j++){
+				  var levelFactor = cfg.factorLegend*radius*((j+1)/cfg.levels);
+				  levelGroups.selectAll(".level")
+				   .data([1]) //dummy data
+				   .enter()
+				   .append("svg:text")
+				   .attr("x", function(d){return levelFactor*(1-cfg.factorLegend*Math.sin(0));})
+				   .attr("y", function(d){return levelFactor*(1-cfg.factorLegend*Math.cos(0));})
+				   .attr("class", "legend")
+				   .style("font-family", "sans-serif")
+				   .style("font-size", "10px")
+				   .attr("transform", "translate(" + (cfg.w/2-levelFactor + cfg.ToRight) + ", " + (cfg.h/2-levelFactor) + ")")
+				   .attr("fill", "#909090")
+				   .text(Format(d3.round((j+1)*cfg.maxValue/cfg.levels))); //(j+1)*cfg.maxValue/cfg.levels)
+				}
+			}
+			
 			levelLine.enter().append('line');
 			levelLine.exit().remove();
 
@@ -126,6 +149,7 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 				return 'translate(' + (cfg.w/2-levelFactor) + ', ' + (cfg.h/2-levelFactor) + ')';
 			  });
 			}
+			
 			if(cfg.axisLine || cfg.axisText) {
 			  var axis = container.selectAll('.axis').data(allAxis);
 
@@ -243,8 +267,8 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 
 			  var circle = circleGroups.selectAll('.circle').data(function(datum, i) {
 				return datum.axes.map(function(d) { return [d, i]; });
-			  });
-
+			  }); 
+			  
 			  circle.enter().append('circle')
 				.classed({circle: 1, 'd3-enter': 1})
 				.on('mouseover', function(d){
@@ -262,7 +286,8 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 
 				  container.classed('focus', 0);
 				  container.select('.area.radar-chart-serie'+d[1]).classed('focused', 0);
-				});
+				})		
+				;
 
 			  circle.exit()
 				.classed('d3-exit', 1) // trigger css transition
@@ -288,7 +313,7 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 				  .each('start', function() {
 					d3.select(this).classed('d3-enter', 0); // trigger css transition
 				  });
-
+				  
 			  // ensure tooltip is upmost layer
 			  var tooltipEl = tooltip.node();
 			  tooltipEl.parentNode.appendChild(tooltipEl);
@@ -318,7 +343,7 @@ define(["jquery","./d3.min"], function($, d3, width, height)
 		var cfg = chart.config();
 
 		d3.select(id).select('svg').remove();
-		d3.select(id)
+		var g = d3.select(id)
 		  .append("svg")
 		  .attr("width", cfg.w)
 		  .attr("height", cfg.h)

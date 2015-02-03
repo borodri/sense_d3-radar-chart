@@ -1,5 +1,6 @@
-define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], function($, cssContent, RadarChart, d3) {'use strict';
-//,  "./d3.v3"
+define(["jquery", "text!./radar-chart.css", "./radar-chart", "./d3.min"], function($, cssContent, RadarChart, d3) { //, d3
+	'use strict';
+		
 	$("<style>").html(cssContent).appendTo("head");
 	
 	return {
@@ -48,6 +49,22 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 								}],
 							defaultValue: true
 						} ,
+						
+						customSwitchProp: {
+							type: "boolean",
+							component: "switch",
+							label: "Values on Axis",
+							ref: "showNumbersOnAxis",
+							options: [ {
+								value: true,
+								label: "on"
+							},{
+								value: false,
+								label: "off"
+							}],
+							defaultValue: false
+						},					
+						
 						customSliderProp: {
 							type: "integer",
 							component: "slider",
@@ -70,6 +87,7 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 		
 		var levels = layout.axisLeves;
 		var is_clockwise = layout.clockorientation;
+		var show_axisnumbers = layout.showNumbersOnAxis;
 		
 		 // Chart object width
 			var width = $element.width();
@@ -95,13 +113,11 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 				return d.qFallbackTitle;
 			}); */
 			var dimensions = layout.qHyperCube.qDimensionInfo;			
-			var LegendTitle = dimensions[0].qFallbackTitle;
-			
+			var LegendTitle = dimensions[0].qFallbackTitle;			
 			
 			// create a new array that contains the dimensions and metric values
 			// depending on whether if 1 or 2 dimensions are being used
- 			if(dimensions.length==2)
-			{			 
+ 			if(dimensions.length==2){			 
 				var dim1Labels = qMatrix.map(function(d) {
 					 return d[0].qText;
 				 });
@@ -112,8 +128,7 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 						 return d[2].qNum;
 				 }) ;	 
 			}
-			else
-			{				
+			else{				
 				var dim1Labels = qMatrix.map(function(d) {
 					 return d[0].qText;
 				 });				 
@@ -122,21 +137,20 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 					 return d[1].qNum;
 				 });				 		 
 			} 
-								
-			var viz = function(width, height, id, dims){
-							
-					var dataBRZ = [];
-					var actClassName = "";
-					var cont=0;
-					var myJson = {};
-					myJson.className = ""; 
-					myJson.axes = [];
-					var contDataBRZ=0;
-					var LegendValues = [];
-					
+			
+		var viz = function(width, height, id, dims){
+
+			var data = [];
+			var actClassName = "";
+			var cont=0;
+			var myJson = {};
+			myJson.className = ""; 
+			myJson.axes = [];
+			var contdata=0;
+			var LegendValues = [];					
 					
 			function Dataset() {
-			  return dataBRZ.map(function(d) {
+			  return data.map(function(d) {
 				return {
 				  className: d.className,
 				  axes: d.axes.map(function(axis) {
@@ -147,14 +161,11 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 			}
 				
 			if(dims==2){
-				for(var k=0;k<dim1Labels.length;k++){
-				
-						if(actClassName!=dim1Labels[k] )
-							{
-								if(cont!=0)
-								{
-									dataBRZ[contDataBRZ] = myJson;
-									contDataBRZ++;				
+				for(var k=0;k<dim1Labels.length;k++){				
+						if(actClassName!=dim1Labels[k] ){
+								if(cont!=0){
+									data[contdata] = myJson;
+									contdata++;				
 								}
 								// it is a different grouping value of Dim1
 								LegendValues.push(dim1Labels[k]);
@@ -165,14 +176,13 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 									myJson.className = dim1Labels[k];							
 									myJson.axes[cont]  = {"axis": dim2Labels[k], "value" : metric1Values[k]};
 									cont++;								
-							} else
-							{							
+							} else{						
 									myJson.axes[cont]  = {"axis": dim2Labels[k], "value" : metric1Values[k]};
 									cont++;
-							}												
+									}												
 						actClassName =  dim1Labels[k];						
 				}				
-				dataBRZ[contDataBRZ] = myJson;			
+				data[contdata] = myJson;			
 			}
 			else{
 				for(var k=0;k<dim1Labels.length;k++){									
@@ -181,38 +191,39 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 									myJson.axes[cont]  = {"axis": dim1Labels[k], "value" : metric1Values[k]};
 									cont++;
 					}	
-					dataBRZ[contDataBRZ] = myJson;
+					data[contdata] = myJson;
 			}
 				
 				function getMaxOfArray(numArray) {
 					return Math.max.apply(null, numArray);
 				}				
+								
+				if (is_clockwise){var rad =  -2 * Math.PI;
+				}else{var rad =  2 * Math.PI;}
 				
-				var MaxValue = getMaxOfArray(metric1Values);				
-				
-				if (is_clockwise)
-				{
-					var rad =  -2 * Math.PI;
-				}else
-				{
-					var rad =  2 * Math.PI;
-				}
-				
+				// Adjust the width the chart will take. When using 2 dimensions, some space will be needed for the legend.
 				if (dims==1){ 
-					var adjustW = 0.95;
-				}else{adjustW = 0.75;}
+					var adjustW = 0.90;
+				}else{adjustW = 0.75}
 				
-				if (width >= height)
-				{
+				// Keep the same height as width to make all the axis the same length
+				if (width >= height){
 					var w = height * adjustW;
 					var h = height *adjustW;
-				}
-				else {
+				}else{
 					var h = width * adjustW;
 					var w = width  * adjustW;
 				}
 				
+				var showAxisText = true;
+				// If the object is too small, hide some options like axis values and axis values. It will look like a 'mini' radar chart.
+				if (w <= 200){
+					show_axisnumbers = false;
+					levels = 3;
+					showAxisText = false;
+				}
 				
+				var MaxValue = getMaxOfArray(metric1Values);			
 				
 				var chart = RadarChart.RadarChart.chart(width, height);			
 				var mycfg = {
@@ -221,13 +232,15 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 					  factor: 0.90,
 					  levels: levels,
 					  factorLegend: 1,
+					  ToRight: 5,
 					  radians: rad,
 					  opacityArea: 0.5,
 					  maxValue: MaxValue,
-					  levelTick: true,
+					  levelTick: false,
 					  axisLine: true,
-					  axisText: true,
+					  axisText: showAxisText,
 					  circles: true,
+					  numbersOnAxis: show_axisnumbers,
 					  transitionDuration: 1000
 					}
 				var cfg = chart.config(mycfg); // retrieve default config				
@@ -240,7 +253,7 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 						  .attr('width', width + 10)
 						  .attr('height', height);
 						svg.append('g').classed('single', 1).datum(Dataset()).call(chart);
-						
+					
 				function showlegend(){						
 						
 						////////////////////////////////////////////
@@ -273,7 +286,7 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 							.attr("class", "legend")
 							.attr("height", 100)
 							.attr("width", 200)
-							.attr('transform', 'translate(90,20)') 
+							.attr('transform', 'translate(90,20)') 							
 							;
 							//Create colour squares
 							legend.selectAll('rect')
@@ -299,9 +312,11 @@ define(["jquery", "css!./radar-chart.css", "./radar-chart", "./d3.min"], functio
 							  ;	
 					};
 				
-				if (dims==2){ 
+				// Show the legend if 2 dimensions are being used and if the object is big enough to place it.
+				if (dims==2 && w >= 200){ 
 					showlegend();
 				}
+				
 			};
 			
 			viz(width, height, id, dimensions.length); 
