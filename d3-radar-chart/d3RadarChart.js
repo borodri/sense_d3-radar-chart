@@ -1,4 +1,4 @@
-define(["jquery", "text!./radar-chart.css", "./radar-chart", "./d3.min"], function($, cssContent, RadarChart, d3) { //, d3
+define(["jquery", "text!./radar-chart.css", "./radar-chart", "./d3.min", "qlik"], function($, cssContent, RadarChart, d3, qlik) { //, d3
 	'use strict';
 		
 	$("<style>").html(cssContent).appendTo("head");
@@ -82,7 +82,10 @@ define(["jquery", "text!./radar-chart.css", "./radar-chart", "./d3.min"], functi
 		snapshot : {
 			canTakeSnapshot : true
 		},
-		
+		support : {
+			export : true,
+			snapshot : true
+		},
 		paint : function($element,layout) {
 		
 		var levels = layout.axisLeves;
@@ -320,6 +323,7 @@ define(["jquery", "text!./radar-chart.css", "./radar-chart", "./d3.min"], functi
 			};
 			
 			viz(width, height, id, dimensions.length); 
+			return qlik.Promise.resolve();
 		}
 	}
 });
